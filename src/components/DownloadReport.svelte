@@ -1,5 +1,5 @@
 <script lang="ts">
-	export let data: any;
+	export let data: { [key: string]: any };
 	import { Button } from 'svelte-5-ui-lib';
 
 	import { DownloadSolid } from 'flowbite-svelte-icons';

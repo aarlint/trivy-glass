@@ -3,7 +3,7 @@
 	export let name: string | null;
 	export let summaryCounts: Record<string, number> = {};
 	export let showSummary = true;
-	import { Heading, P, Popover, Button, Breadcrumb, BreadcrumbItem } from 'svelte-5-ui-lib';
+	import { Heading, Breadcrumb, BreadcrumbItem } from 'svelte-5-ui-lib';
 	function getTextColor(key: string) {
 		switch (key.toLowerCase()) {
 			case 'critical':

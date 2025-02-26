@@ -16,7 +16,6 @@
 	let {
 		reports = [],
 		reportType,
-		showSummary = true,
 		showNamespace = true,
 		columns = []
 	} = $props();
@@ -64,7 +63,7 @@
 		modalStatus = modalExample.isOpen;
 	});
 
-	let selectedReport: any = null;
+	let selectedReport: any = $state(null);
 	function openJsonModal(report: any) {
 		selectedReport = report;
 		modalExample.toggle();

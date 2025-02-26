@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { Card, Badge, Alert, Breadcrumb, BreadcrumbItem } from 'svelte-5-ui-lib';
+	import { Card, Badge, Alert } from 'svelte-5-ui-lib';
 
 	const { checks } = $props();
 

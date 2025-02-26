@@ -1,4 +1,4 @@
-import { KubeConfig, CustomObjectsApi } from '@kubernetes/client-node';
+import { KubeConfig, CustomObjectsApi, V1CustomResourceDefinition } from '@kubernetes/client-node';
 import redis from 'redis'; // Import default export
 
 // Destructure what you need from the default export
@@ -34,8 +34,10 @@ redisClient.on('error', (err) => console.error('Redis Client Error', err));
 		console.log('Connecting to Redis...');
 		await redisClient.connect();
 		console.log('Successfully connected to Redis');
-	} catch (err: any) {
-		console.error('Failed to connect to Redis:', err.message);
+	} catch (err: unknown) {
+		if (err instanceof Error) {
+			console.error('Failed to connect to Redis:', err.message);
+		}
 	}
 })();
 
@@ -57,7 +59,7 @@ export interface CRDMetadata {
 }
 
 export interface ReportsData {
-	manifests: any[];
+	manifests: Record<string, unknown>[];
 	clusterName: string;
 	scope: string;
 	error?: string;
@@ -65,32 +67,32 @@ export interface ReportsData {
 }
 
 // Helper: Extract value from an object based on JSON path
-function extractValue(obj: any, jsonPath: string): any {
+function extractValue(obj: Record<string, unknown>, jsonPath: string): unknown {
 	if (!obj || !jsonPath) return undefined;
 	const parts = jsonPath.split('.').slice(1); // Skip leading dot
-	let value = obj;
+	let value: unknown = obj;
 	for (const part of parts) {
 		if (value && typeof value === 'object' && part in value) {
-			value = value[part];
+			value = (value as Record<string, unknown>)[part];
 		} else {
 			return undefined;
 		}
 	}
 	if (value && (jsonPath.endsWith('Timestamp') || jsonPath.includes('creation'))) {
-		return new Date(value).toLocaleString() || value;
+		return new Date(value as string).toLocaleString() || value;
 	}
 	return value;
 }
 
 // Helper: Extract column definitions from version info
-function getColumnDefinitions(versionInfo: any): ColumnDefinition[] {
+function getColumnDefinitions(versionInfo: V1CustomResourceDefinition): ColumnDefinition[] {
 	if (!versionInfo) {
 		console.log('No version info provided for extracting columns');
 		return [];
 	}
 	console.log('Extracting column definitions from version info');
 	return (
-		versionInfo.additionalPrinterColumns?.map((col: any) => ({
+		versionInfo.additionalPrinterColumns?.map((col) => ({
 			name: col.name,
 			description: col.description,
 			jsonPath: col.jsonPath,
@@ -118,15 +120,15 @@ export async function listAllAquaSecurityCRDs(): Promise<CRDMetadata[]> {
 			version: 'v1',
 			plural: 'customresourcedefinitions'
 		});
-		const items = (response as any).items || [];
+		const items = (response as { items: V1CustomResourceDefinition[] }).items || [];
 		console.log(`Fetched ${items.length} CRDs from Kubernetes API`);
 		const crds = items
 			.filter(
-				(crd: any) => crd.spec.group === 'aquasecurity.github.io' && crd.spec.scope !== 'Namespaced'
+				(crd) => crd.spec.group === 'aquasecurity.github.io' && crd.spec.scope !== 'Namespaced'
 			)
-			.map((crd: any) => {
-				const versionInfo = crd.spec.versions.find((v: any) => v.name === 'v1alpha1');
-				const columns = getColumnDefinitions(versionInfo);
+			.map((crd) => {
+				const versionInfo = crd.spec.versions.find((v) => v.name === 'v1alpha1');
+				const columns = getColumnDefinitions(versionInfo as V1CustomResourceDefinition);
 				console.log(`Processed CRD ${crd.metadata.name} with ${columns.length} columns`);
 				return {
 					group: 'aquasecurity.github.io',
@@ -139,18 +141,12 @@ export async function listAllAquaSecurityCRDs(): Promise<CRDMetadata[]> {
 		await redisClient.setEx(cacheKey, CACHE_DURATION, JSON.stringify(crds));
 		console.log('Cached Aqua CRDs in Redis');
 		return crds;
-	} catch (err: any) {
-		console.error(`Critical error fetching Aqua CRDs: ${err.message}`);
+	} catch (err: unknown) {
+		if (err instanceof Error) {
+			console.error(`Critical error fetching Aqua CRDs: ${err.message}`);
+		}
 		return [];
 	}
-}
-
-export interface ReportsData {
-	manifests: any[]; // Will contain only metadata and column values
-	clusterName: string;
-	scope: string;
-	error?: string;
-	resource?: string;
 }
 
 // Exported function: Load reports for a specific CRD
@@ -178,16 +174,16 @@ export async function loadReports(crdPlural: string): Promise<ReportsData> {
 			plural: 'customresourcedefinitions',
 			name: crdName
 		});
-		const crdSpec = (crdResponse as any).spec;
+		const crdSpec = (crdResponse as { spec: V1CustomResourceDefinition }).spec;
 		if (!crdSpec) {
 			throw new Error(`CRD ${crdName} did not return a valid spec`);
 		}
 
-		const versionInfo = crdSpec.versions.find((v: any) => v.name === 'v1alpha1');
+		const versionInfo = crdSpec.versions.find((v) => v.name === 'v1alpha1');
 		if (!versionInfo) {
 			throw new Error(`No v1alpha1 version found for ${crdName}`);
 		}
-		let columns = getColumnDefinitions(versionInfo);
+		let columns = getColumnDefinitions(versionInfo as V1CustomResourceDefinition);
 		if (columns.length === 0) {
 			console.log('No additional printer columns found, using default columns');
 			columns = [
@@ -198,7 +194,7 @@ export async function loadReports(crdPlural: string): Promise<ReportsData> {
 
 		// Determine scope and fetch items accordingly
 		const scope = crdSpec.scope || 'Cluster';
-		let items: any[] = [];
+		let items: Record<string, unknown>[] = [];
 		console.log(`CRD ${crdPlural} is ${scope}-scoped`);
 		if (scope === 'Namespaced') {
 			try {
@@ -207,11 +203,11 @@ export async function loadReports(crdPlural: string): Promise<ReportsData> {
 					version: 'v1alpha1',
 					plural: crdPlural
 				});
-				items = (result as any).items || [];
-			} catch (listErr: any) {
-				console.warn(
-					`Warning: Could not list namespaced instances of ${crdPlural}: ${listErr.message}`
-				);
+				items = (result as { items: Record<string, unknown>[] }).items || [];
+			} catch (listErr: unknown) {
+				if (listErr instanceof Error) {
+					console.warn(`Warning: Could not list namespaced instances of ${crdPlural}: ${listErr.message}`);
+				}
 				items = [];
 			}
 		} else {
@@ -221,11 +217,11 @@ export async function loadReports(crdPlural: string): Promise<ReportsData> {
 					version: 'v1alpha1',
 					plural: crdPlural
 				});
-				items = (result as any).items || [];
-			} catch (listErr: any) {
-				console.warn(
-					`Warning: Could not list cluster instances of ${crdPlural}: ${listErr.message}`
-				);
+				items = (result as { items: Record<string, unknown>[] }).items || [];
+			} catch (listErr: unknown) {
+				if (listErr instanceof Error) {
+					console.warn(`Warning: Could not list cluster instances of ${crdPlural}: ${listErr.message}`);
+				}
 				items = [];
 			}
 		}
@@ -234,7 +230,7 @@ export async function loadReports(crdPlural: string): Promise<ReportsData> {
 
 		// Transform items to include only metadata and column values
 		const filteredReports = items.map((item) => {
-			const reportData: { [key: string]: any } = {
+			const reportData: Record<string, unknown> = {
 				metadata: item.metadata || {}
 			};
 			columns.forEach((col) => {
@@ -254,13 +250,15 @@ export async function loadReports(crdPlural: string): Promise<ReportsData> {
 		await redisClient.setEx(cacheKey, CACHE_DURATION, JSON.stringify(data));
 
 		return data;
-	} catch (err: any) {
-		console.error(`Critical error fetching ${crdPlural}: ${err.message}`);
+	} catch (err: unknown) {
+		if (err instanceof Error) {
+			console.error(`Critical error fetching ${crdPlural}: ${err.message}`);
+		}
 		const data: ReportsData = {
 			manifests: [],
 			clusterName: 'Unknown Cluster',
 			scope: 'Unknown',
-			error: err.message,
+			error: err instanceof Error ? err.message : 'Unknown error',
 			resource: crdPlural
 		};
 		await redisClient.setEx(cacheKey, CACHE_DURATION, JSON.stringify(data));

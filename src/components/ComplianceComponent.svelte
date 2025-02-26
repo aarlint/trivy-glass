@@ -58,7 +58,8 @@
 		});
 
 	// State for selected control and modal
-	let selectedControl = null;
+	let selectedControl = $state(null);
+    
 	const modal = uiHelpers();
 	let modalOpen = $state(false);
 	$effect(() => {

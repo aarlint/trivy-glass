@@ -7,23 +7,16 @@
 		NavLi,
 		uiHelpers,
 		NavHamburger,
-		Dropdown,
-		DropdownHeader,
-		DropdownUl,
-		DropdownLi,
-		Avatar,
-		DropdownFooter
 	} from 'svelte-5-ui-lib';
-	import { ChevronDownOutline } from 'flowbite-svelte-icons';
 	import { page } from '$app/stores';
 	let activeUrl = $state($page.url.pathname);
-	import { sineIn } from 'svelte/easing';
+
 	let nav = uiHelpers();
 	let navStatus = $state(false);
 	let toggleNav = nav.toggle;
-	let dropdownUser = uiHelpers();
-	let dropdownUserStatus = $state(false);
-	let closeDropdownUser = dropdownUser.close;
+
+
+
 	let menu = [
 		{ name: 'About us', href: '/about' },
 		{ name: 'Blog', href: '/blog' },
@@ -37,17 +30,16 @@
 		{ name: 'Pro Version', href: '/pro' },
 		{ name: 'License', href: '/license' }
 	];
-	let closeNav = nav.close;
 	let mega = uiHelpers();
 	let megaStatus = $state(false);
-	const toggleMega = mega.toggle;
+
 	$effect(() => {
 		navStatus = nav.isOpen;
 		megaStatus = mega.isOpen;
 	});
 	import { Darkmode } from 'svelte-5-ui-lib';
 	$effect(() => {
-		dropdownUserStatus = dropdownUser.isOpen;
+		
 		navStatus = nav.isOpen;
 		activeUrl = $page.url.pathname;
 	});

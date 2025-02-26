@@ -23,7 +23,7 @@
 	let isDemoOpen = $state(true); // Sidebar starts open
 	let loading = $state(false);
 
-	const spanClass = 'flex-1 ms-3 whitespace-nowrap';
+	
 	const demoSidebarUi = uiHelpers();
 	const closeDemoSidebar = demoSidebarUi.close;
 
@@ -31,11 +31,11 @@
 	let isClusterOpen = $state(true);
 	let isNamespaceOpen = $state(true);
 
-	beforeNavigate((navigation) => {
+	beforeNavigate(() => {
 		loading = true;
 	});
 
-	afterNavigate((navigation) => {
+	afterNavigate(() => {
 		loading = false;
 		activeUrl = $page.url.pathname;
 		isDemoOpen = demoSidebarUi.isOpen;
@@ -43,17 +43,7 @@
 
 	let { children } = $props();
 
-	function Placeholder() {
-		return `
-            <div class="flex h-full w-full flex-col items-center justify-center text-gray-500 dark:text-gray-400">
-                <svg class="h-12 w-12 animate-spin mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
-                </svg>
-                <p>Loading...</p>
-            </div>
-        `;
-	}
+
 </script>
 
 <div class="flex h-screen flex-col overflow-hidden">
@@ -184,7 +174,13 @@
 					class="scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 flex-1 overflow-x-auto overflow-y-auto"
 				>
 					{#if loading}
-						{@html Placeholder()}
+                    <div class="flex h-full w-full flex-col items-center justify-center text-gray-500 dark:text-gray-400">
+                        <svg class="h-12 w-12 animate-spin mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8h8a8 8 0 01-8 8 8 8 0 01-8-8z"></path>
+                        </svg>
+                        <p>Loading...</p>
+                    </div>
 					{:else}
 						{@render children()}
 					{/if}
