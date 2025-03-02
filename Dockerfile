@@ -1,7 +1,7 @@
 FROM node:latest AS builder
-# Switch to root to update OS libraries using microdnf
+# Switch to root to update OS libraries using apt-get
 USER root
-RUN microdnf update -y krb5-libs openssl-libs && microdnf clean all
+RUN apt-get update && apt-get install -y krb5-locales openssl && apt-get clean
 
 # Switch back to node for app operations
 USER node
@@ -16,7 +16,7 @@ RUN npm prune --production
 FROM node:latest
 # Update OS libraries in the runtime image
 USER root
-RUN microdnf update -y && microdnf clean all
+RUN apt-get update && apt-get upgrade -y && apt-get clean
 
 USER node
 WORKDIR /app
