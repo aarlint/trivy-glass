@@ -1,7 +1,9 @@
 import { KubeConfig, CustomObjectsApi, V1CustomResourceDefinition } from '@kubernetes/client-node';
-import redis from 'redis'; // Import default export
+import redis from 'redis';
+import dotenv from 'dotenv';
 
-// Destructure what you need from the default export
+dotenv.config();
+
 const { createClient } = redis;
 
 // Load kubeconfig only once
@@ -22,8 +24,8 @@ console.log(`Current cluster: ${clusterName}`);
 
 // Initialize Redis client
 const redisClient = createClient({
-	url: 'redis://localhost:6379' // For local testing
-	// password: 'testpassword', // Uncomment if you set a password
+	url: process.env.REDIS_URL || 'redis://localhost:6379',
+	password: process.env.REDIS_PASSWORD || undefined,
 });
 
 redisClient.on('error', (err) => console.error('Redis Client Error', err));
@@ -41,7 +43,7 @@ redisClient.on('error', (err) => console.error('Redis Client Error', err));
 	}
 })();
 
-const CACHE_DURATION = 30 * 60; // Cache duration in seconds
+const CACHE_DURATION = parseInt(process.env.CACHE_DURATION || '1800', 10); // Cache duration in seconds
 
 export interface ColumnDefinition {
 	name: string;

@@ -1,6 +1,6 @@
 image:
   # -- image repository
-  repository: trivy-glass
+  repository: ghcr.io/aarlint/trivy-glass
   # -- image tag
   tag: "latest"
   # -- pull policy
