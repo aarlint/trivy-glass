@@ -8,6 +8,10 @@ on:
     branches:
       - main  # Optional: Build on PRs too
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
